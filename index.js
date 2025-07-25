@@ -1,36 +1,36 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
-const fs = require('fs-extra');
+
+const {
+  getUser,
+  creditUser,
+  debitUser,
+  logClick,
+  addReferral,
+  saveDB,
+  CLICK_REWARD,
+  REF_REWARD,
+  WITHDRAW_LIMIT,
+  ADMIN_ID,
+  CHANNELS
+} = require('./db');
 
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const CHANNELS = ['@freeclaimltc', '@Konnetearnchannel'];
-const ADMIN_ID = 6136849497;
-const DATA_FILE = 'db.json';
-const CLICK_REWARD = 0.0005;
-const REF_REWARD = 0.01;
-const WITHDRAW_LIMIT = 0.10;
-
-let db = fs.readJsonSync(DATA_FILE);
-
-function saveDB() {
-  fs.writeJsonSync(DATA_FILE, db);
-}
-
-function getUser(id) {
-  if (!db.users[id]) {
-    db.users[id] = {
-      balance: 0,
-      referrals: [],
-      clicks: [],
-      joined: false,
-    };
-    saveDB();
-  }
-  return db.users[id];
+function mainMenu() {
+  return {
+    reply_markup: {
+      keyboard: [
+        ['\uD83D\uDCB0 Balance', '\uD83D\uDCC4 Withdraw'],
+        ['\uD83D\uDD31 Click and Earn', '\uD83D\uDCDD Signup and Earn'],
+        ['\uD83D\uDCDE Contact Admin']
+      ],
+      resize_keyboard: true
+    }
+  };
 }
 
 async function checkChannels(userId) {
@@ -41,19 +41,6 @@ async function checkChannels(userId) {
     }
   }
   return true;
-}
-
-function mainMenu() {
-  return {
-    reply_markup: {
-      keyboard: [
-        ['💰 Balance', '📤 Withdraw'],
-        ['🖱 Click and Earn', '📝 Signup and Earn'],
-        ['📞 Contact Admin'],
-      ],
-      resize_keyboard: true,
-    },
-  };
 }
 
 bot.onText(/\/start (.+)/, async (msg, match) => {
@@ -70,10 +57,7 @@ bot.onText(/\/start (.+)/, async (msg, match) => {
   saveDB();
 
   if (ref && ref !== msg.from.id.toString()) {
-    const refUser = getUser(ref);
-    if (!refUser.referrals.includes(msg.from.id)) {
-      refUser.balance += REF_REWARD;
-      refUser.referrals.push(msg.from.id);
+    if (addReferral(ref, msg.from.id)) {
       bot.sendMessage(ref, `🎉 You earned $${REF_REWARD.toFixed(2)} from a new referral!`);
     }
   }
@@ -129,8 +113,7 @@ bot.on('message', async (msg) => {
       bot.once('message', (msg3) => {
         const address = msg3.text;
         const amount = user.balance;
-        user.balance = 0;
-        saveDB();
+        debitUser(userId, amount);
 
         const forwardMsg = `💸 *Withdrawal Request*\n\n👤 User: [${msg.from.first_name}](tg://user?id=${userId})\n💳 Method: ${method}\n📬 Address: ${address}\n💰 Amount: $${amount.toFixed(2)}`;
         bot.sendMessage(msg.chat.id, `✅ Withdrawal request submitted! You will be paid shortly.`);
@@ -154,9 +137,8 @@ bot.on('message', async (msg) => {
     bot.sendMessage(msg.chat.id, `🖱 Click the link and wait for 60 seconds:\n${link}`);
 
     setTimeout(() => {
-      user.balance += CLICK_REWARD;
-      user.clicks.push(now);
-      saveDB();
+      creditUser(userId, CLICK_REWARD);
+      logClick(userId);
       bot.sendMessage(msg.chat.id, `✅ $${CLICK_REWARD.toFixed(4)} added to your balance.`);
     }, 60000);
   }
@@ -194,9 +176,7 @@ bot.on('callback_query', (query) => {
 
     bot.once('message', (msg2) => {
       const amount = parseFloat(msg2.text);
-      const user = getUser(userId);
-      user.balance += amount;
-      saveDB();
+      creditUser(userId, amount);
       bot.sendMessage(userId, `✅ Your signup proof has been approved. You earned $${amount.toFixed(2)}!`);
       bot.sendMessage(adminId, `✅ Approved. $${amount.toFixed(2)} added to user ${userId}.`);
     });
