@@ -1,84 +1,83 @@
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'db.json');
+const DATA_FILE = path.join(__dirname, 'db.json');
+const CLICK_REWARD = 0.0005;
+const REF_REWARD = 0.01;
+const WITHDRAW_LIMIT = 0.10;
+const ADMIN_ID = 6136849497;
+const CHANNELS = ['@freeclaimltc', '@Konnetearnchannel'];
 
-// Load database from file or create new one
-function loadDB() {
-  try {
-    const data = fs.readFileSync(DB_PATH, 'utf8');
-    return JSON.parse(data);
-  } catch (err) {
-    return { users: {}, referrals: {} };
+// Load DB or create default structure
+let db = fs.existsSync(DATA_FILE)
+  ? fs.readJsonSync(DATA_FILE)
+  : { users: {} };
+
+// Save changes to disk
+function saveDB() {
+  fs.writeJsonSync(DATA_FILE, db);
+}
+
+// Get or create user
+function getUser(id) {
+  if (!db.users[id]) {
+    db.users[id] = {
+      balance: 0,
+      referrals: [],
+      clicks: [],
+      joined: false
+    };
+    saveDB();
   }
+  return db.users[id];
 }
 
-// Save the current state of DB to disk
-function saveDB(db) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+// Add to user balance
+function creditUser(id, amount) {
+  const user = getUser(id);
+  user.balance += amount;
+  saveDB();
 }
 
-// Add user if not already in database
-function addUser(userId) {
-  const db = loadDB();
-  if (!db.users[userId]) {
-    db.users[userId] = { balance: 0, clicks: 0, referrals: [] };
-    saveDB(db);
-  }
+// Subtract from user balance
+function debitUser(id, amount) {
+  const user = getUser(id);
+  user.balance = Math.max(0, user.balance - amount);
+  saveDB();
 }
 
-// Get user data
-function getUser(userId) {
-  const db = loadDB();
-  return db.users[userId] || null;
-}
-
-// Update user balance
-function updateBalance(userId, amount) {
-  const db = loadDB();
-  if (!db.users[userId]) return false;
-  db.users[userId].balance += amount;
-  saveDB(db);
-  return true;
-}
-
-// Set user balance
-function setBalance(userId, amount) {
-  const db = loadDB();
-  if (!db.users[userId]) return false;
-  db.users[userId].balance = amount;
-  saveDB(db);
-  return true;
+// Record click timestamp
+function logClick(id) {
+  const user = getUser(id);
+  user.clicks.push(Date.now());
+  saveDB();
 }
 
 // Add referral
 function addReferral(referrerId, referredId) {
-  const db = loadDB();
-  if (!db.users[referrerId]) return false;
-  if (!db.referrals[referrerId]) {
-    db.referrals[referrerId] = [];
-  }
-  if (!db.referrals[referrerId].includes(referredId)) {
-    db.referrals[referrerId].push(referredId);
-    db.users[referrerId].referrals.push(referredId);
-    saveDB(db);
+  const refUser = getUser(referrerId);
+  if (!refUser.referrals.includes(referredId)) {
+    refUser.referrals.push(referredId);
+    refUser.balance += REF_REWARD;
+    saveDB();
     return true;
   }
   return false;
 }
 
-// Bot credentials (hardcoded — move to env vars for production)
-const BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE';
-const ADMIN_CHAT_ID = 6136849497;
-
+// Export all functions and constants
 module.exports = {
-  loadDB,
-  saveDB,
-  addUser,
   getUser,
-  updateBalance,
-  setBalance,
+  creditUser,
+  debitUser,
+  logClick,
   addReferral,
-  BOT_TOKEN,
-  ADMIN_CHAT_ID
+  saveDB,
+  DATA_FILE,
+  CLICK_REWARD,
+  REF_REWARD,
+  WITHDRAW_LIMIT,
+  ADMIN_ID,
+  CHANNELS,
+  db
 };
