@@ -1,4 +1,84 @@
-{
-  "users": {},
-  "referrals": {}
+const fs = require('fs');
+const path = require('path');
+
+const DB_PATH = path.join(__dirname, 'db.json');
+
+// Load database from file or create new one
+function loadDB() {
+  try {
+    const data = fs.readFileSync(DB_PATH, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    return { users: {}, referrals: {} };
+  }
 }
+
+// Save the current state of DB to disk
+function saveDB(db) {
+  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
+}
+
+// Add user if not already in database
+function addUser(userId) {
+  const db = loadDB();
+  if (!db.users[userId]) {
+    db.users[userId] = { balance: 0, clicks: 0, referrals: [] };
+    saveDB(db);
+  }
+}
+
+// Get user data
+function getUser(userId) {
+  const db = loadDB();
+  return db.users[userId] || null;
+}
+
+// Update user balance
+function updateBalance(userId, amount) {
+  const db = loadDB();
+  if (!db.users[userId]) return false;
+  db.users[userId].balance += amount;
+  saveDB(db);
+  return true;
+}
+
+// Set user balance
+function setBalance(userId, amount) {
+  const db = loadDB();
+  if (!db.users[userId]) return false;
+  db.users[userId].balance = amount;
+  saveDB(db);
+  return true;
+}
+
+// Add referral
+function addReferral(referrerId, referredId) {
+  const db = loadDB();
+  if (!db.users[referrerId]) return false;
+  if (!db.referrals[referrerId]) {
+    db.referrals[referrerId] = [];
+  }
+  if (!db.referrals[referrerId].includes(referredId)) {
+    db.referrals[referrerId].push(referredId);
+    db.users[referrerId].referrals.push(referredId);
+    saveDB(db);
+    return true;
+  }
+  return false;
+}
+
+// Bot credentials (hardcoded — move to env vars for production)
+const BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE';
+const ADMIN_CHAT_ID = 6136849497;
+
+module.exports = {
+  loadDB,
+  saveDB,
+  addUser,
+  getUser,
+  updateBalance,
+  setBalance,
+  addReferral,
+  BOT_TOKEN,
+  ADMIN_CHAT_ID
+};
