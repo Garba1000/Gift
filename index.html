@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bots Reviews</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" />
+
+<!-- ✅ Monetag SDK -->
+<script src='//libtl.com/sdk.js' data-zone='9852483' data-sdk='show_9852483'></script>
+
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap");
+* {margin:0; padding:0; box-sizing:border-box; font-family:"Roboto",sans-serif;}
+body {background:#000; color:white; padding:20px; padding-top:100px;}
+.header {position:fixed; top:0; width:100%; background:#000; display:flex; justify-content:space-between; align-items:center; padding:15px 20px; z-index:100;}
+.header h1 {font-size:24px;}
+.article-container {margin-top:100px; display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px;}
+.article {background:#222; border-radius:12px; padding:12px; cursor:pointer; transition:transform 0.2s;}
+.article:hover {transform:scale(1.05);}
+.article h3 {font-size:16px; font-weight:700; margin-bottom:6px;}
+.article p {font-size:12px; color:#bbb; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;}
+.fab, .fab-withdraw, .fab-watch {position:fixed; width:56px; height:56px; border-radius:50%; display:flex; justify-content:center; align-items:center; font-size:22px; cursor:pointer;}
+.fab {bottom:40px; right:20px; background:#ffc107; color:black;}
+.fab-withdraw {bottom:110px; right:20px; background:#28a745; color:white;}
+.fab-watch {bottom:180px; right:20px; background:#007bff; color:white;}
+.popup, .withdraw-popup {position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; display:none; flex-direction:column; padding:20px; padding-top:100px; overflow-y:auto;}
+.popup input, .popup textarea, .withdraw-popup select, .withdraw-popup input {width:100%; background:none; border:1px solid #555; color:white; margin-bottom:10px; padding:8px; border-radius:6px;}
+.popup textarea {height:50vh; resize:none;}
+.popup-header, .withdraw-header {display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+.btn {padding:10px; border:none; border-radius:5px; cursor:pointer; margin-top:10px;}
+.save-btn {background:#28a745; color:white;}
+.read-btn {background:#007bff; color:white; margin-top:8px; width:100%; border-radius:6px; padding:6px;}
+.points {margin-top:5px; font-size:14px; color:gray; cursor:pointer;}
+/* Toast */
+.toast {position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:8px; opacity:0; transition:opacity 0.5s ease-in-out; z-index:200;}
+.toast.show {opacity:1;}
+</style>
+
+<script src="https://telegram.org/js/telegram-web-app.js?1"></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+
+<script>
+const ADMIN_CHAT_ID = "6136849497"; 
+const MIN_WITHDRAW = 20.00;
+const REWARD_PER_AD = 0.01; // reward for Monetag
+
+window.Telegram.WebApp.ready();
+const webApp = Telegram.WebApp;
+const currentUserId = webApp.initDataUnsafe.user?.id || 'guest';
+const currentUsername = webApp.initDataUnsafe.user?.username || 'unknown';
+
+function isAdmin() { return String(currentUserId) === ADMIN_CHAT_ID; }
+
+function saveUserBalance(balance){
+  let allBalances = JSON.parse(localStorage.getItem('userBalance')||'{}');
+  allBalances[currentUserId] = balance;
+  localStorage.setItem('userBalance', JSON.stringify(allBalances));
+}
+function getUserBalance(){
+  let allBalances = JSON.parse(localStorage.getItem('userBalance')||'{}');
+  return allBalances[currentUserId] || 0;
+}
+
+let adsGram, articlesCache=[];
+
+document.addEventListener('DOMContentLoaded', () => {
+  adsGram = window.Adsgram.init({ blockId: "14081" });
+
+  // ✅ Show AdsGram once when page loads
+  showAdsGram(() => {
+    renderArticles();
+    if(!isAdmin()) document.getElementById('fabPost').style.display='none';
+  });
+});
+
+function showToast(msg){
+  let toast=document.getElementById('toast');
+  toast.innerText=msg;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2000);
+}
+
+// ✅ Show AdsGram
+function showAdsGram(callback){
+  if(!adsGram) return;
+  adsGram.show().then(()=>{
+    if(callback) callback();
+  }).catch(()=>{ if(callback) callback(); });
+}
+
+// ✅ Monetag ad on "Watch Videos"
+function showMonetag(){
+  if(typeof window.show_9852483 === "function"){
+    show_9852483().then(() => {
+      // reward user
+      let balance = getUserBalance();
+      balance += REWARD_PER_AD;
+      saveUserBalance(balance);
+      renderArticles();
+      showToast(`+ $${REWARD_PER_AD.toFixed(2)} (Monetag)`);
+    }).catch(e => {
+      console.error("Monetag ad error:", e);
+      alert("⚠️ Ad failed. Try again later.");
+    });
+  } else {
+    alert("⚠️ Monetag SDK not loaded.");
+  }
+}
+
+// Article functions
+function openArticle(index){
+  const art = articlesCache[index];
+  const popup = document.getElementById('articlePopup');
+  popup.style.display='flex';
+  document.getElementById('articleTitle').innerText = art.title;
+  document.getElementById('articleContent').innerText = art.content;
+}
+function closeArticle(){ document.getElementById('articlePopup').style.display='none'; }
+
+// Post popup functions
+function openPostPopup(){ document.getElementById('postPopup').style.display='flex'; }
+function closePostPopup(){ document.getElementById('postPopup').style.display='none'; }
+
+function savePost(){
+  const title=document.getElementById('postTitle').value.trim();
+  const content=document.getElementById('postContent').value.trim();
+  if(!title||!content) return alert("Title and content are required.");
+  articlesCache.unshift({ title, content, user_id: currentUserId, status:'approved', timestamp:new Date().toISOString() });
+  localStorage.setItem('articles', JSON.stringify(articlesCache));
+  closePostPopup();
+  renderArticles();
+}
+
+// Articles list
+function fetchArticles(){ return JSON.parse(localStorage.getItem('articles') || '[]'); }
+
+function renderArticles(){
+  const container=document.getElementById('articlesContainer');
+  container.innerHTML='';
+  articlesCache=fetchArticles();
+  if(articlesCache.length===0){ container.innerHTML='<p>No reviews yet</p>'; return; }
+  articlesCache.forEach((art,index)=>{
+    let div=document.createElement('div');
+    div.className='article';
+    div.innerHTML=`<h3>${art.title}</h3><p>${art.content}</p>`;
+    div.onclick=()=>openArticle(index);
+    container.appendChild(div);
+  });
+  document.getElementById('pointsDisplay').innerText=`Balance: $${getUserBalance().toFixed(2)}`;
+}
+
+// Withdraw functions
+function openWithdraw(){
+  document.getElementById('withdrawPopup').style.display='flex';
+  document.getElementById('withdrawPoints').innerText=getUserBalance().toFixed(2);
+}
+function closeWithdraw(){ document.getElementById('withdrawPopup').style.display='none'; }
+function submitWithdraw(){
+  let balance=getUserBalance();
+  let method=document.getElementById('withdrawMethod').value;
+  if(balance<MIN_WITHDRAW){ alert('Minimum withdrawal is $20.00'); return; }
+  saveUserBalance(balance-MIN_WITHDRAW);
+  alert(`Withdrawal of $${MIN_WITHDRAW.toFixed(2)} via ${method} requested.`);
+  closeWithdraw();
+  renderArticles();
+}
+</script>
+</head>
+<body>
+
+<div class="header">
+  <h1>Reviews bots</h1>
+  <div class="points" id="pointsDisplay" onclick="openWithdraw()">Balance: $0.00 <i class="fa fa-wallet"></i></div>
+</div>
+
+<div class="article-container" id="articlesContainer"><p>Loading reviews...</p></div>
+
+<div class="fab" id="fabPost" onclick="openPostPopup()"><i class="fa fa-plus"></i></div>
+<div class="fab-withdraw" onclick="openWithdraw()"><i class="fa fa-wallet"></i></div>
+<div class="fab-watch" onclick="showMonetag()"><i class="fa fa-play"></i></div>
+
+<!-- Post Popup -->
+<div class="popup" id="postPopup">
+  <div class="popup-header"><h2>New Review</h2><span onclick="closePostPopup()" style="cursor:pointer">X</span></div>
+  <input type="text" id="postTitle" placeholder="Title">
+  <textarea id="postContent" placeholder="Content"></textarea>
+  <button class="btn save-btn" onclick="savePost()">Submit</button>
+</div>
+
+<!-- Article Popup -->
+<div class="popup" id="articlePopup">
+  <div class="popup-header"><h2 id="articleTitle">Title</h2><span onclick="closeArticle()" style="cursor:pointer">X</span></div>
+  <p id="articleContent">Content</p>
+</div>
+
+<!-- Withdraw Popup -->
+<div class="withdraw-popup" id="withdrawPopup">
+  <div class="withdraw-header"><h2>Withdraw Balance</h2><span onclick="closeWithdraw()" style="cursor:pointer">X</span></div>
+  <p>Your balance: $<span id="withdrawPoints">0.00</span></p>
+  <select id="withdrawMethod">
+    <option value="paypal">PayPal</option>
+    <option value="bank">Bank Transfer</option>
+  </select>
+  <button class="btn save-btn" onclick="submitWithdraw()">Withdraw</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+</body>
+</html>
