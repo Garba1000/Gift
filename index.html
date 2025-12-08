@@ -83,7 +83,6 @@ function showToast(msg){
   const t=document.getElementById('toast');
   t.innerText=msg;
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2000);
 }
 
 // --- Adsgram Reward on Page Load ---
@@ -112,16 +111,45 @@ function openArticle(){
   document.getElementById('commentSection').style.display='block';
 }
 
-// --- Submit Comment ---
+// --- Submit Comment with Date & Time ---
 function submitComment(){
+  const commentText = document.getElementById("commentBox").value.trim();
+
+  if(!commentText){
+    showToast("❌ Write a comment first!");
+    return;
+  }
+
   if(userBalance < 2000){
     showToast("❌ You don't have 2,000 points to comment!");
     showClaimTask();
     return;
   }
+
   userBalance -= 2000;
   saveBalance();
-  showToast("✅ Comment submitted!");
+
+  showToast("✅ Comment submitted successfully!");
+
+  document.getElementById("commentBox").remove();
+  document.getElementById("submitComment").remove();
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString();
+  const timeStr = now.toLocaleTimeString();
+
+  const newComment = document.createElement("div");
+  newComment.style.marginTop = "15px";
+  newComment.style.padding = "10px";
+  newComment.style.background = "#111";
+  newComment.style.borderRadius = "8px";
+  newComment.innerHTML = `<p>${commentText}</p><small style="color:#aaa;">Posted on ${dateStr} at ${timeStr}</small>`;
+
+  document.getElementById("commentSection").appendChild(newComment);
+
+  setTimeout(() => {
+    document.getElementById("toast").classList.remove("show");
+  }, 30000);
 }
 
 // --- Task & Earn ---
@@ -142,7 +170,7 @@ function showTaskAd(){
   }, {once:true});
 }
 
-// --- Claim Task if comment points insufficient ---
+// --- Claim Task When Comment Points Insufficient ---
 function showClaimTask(){
   const blockId = taskBlocks[currentTaskIndex];
   const claimContainer = document.createElement('div');
@@ -164,7 +192,7 @@ function showWatchAd(){
     if(res.done){
       userBalance += 100;
       saveBalance();
-      showToast("✅ Video watched! +00 pts");
+      showToast("✅ Video watched! +100 pts");
     }
   }).catch(console.log);
 }
