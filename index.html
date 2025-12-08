@@ -7,9 +7,11 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 <style>
-body { font-family: "Roboto", sans-serif; background:#000; color:white; padding:20px; padding-top:120px; }
-.header { position:fixed; top:0; width:100%; background:#000; display:flex; justify-content:space-between; align-items:center; padding:15px 20px; z-index:100; }
-.header h1 { font-size:24px; }
+body { font-family: "Roboto", sans-serif; background:#000; color:white; margin:0; padding:0; }
+header { position:fixed; top:0; left:0; width:100%; background:#111; color:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; z-index:100; }
+header h1 { font-size:22px; }
+#balanceDisplay { font-size:18px; }
+.container { margin-top:80px; padding:20px; }
 .button-container { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
 .btn { flex:1; padding:10px; border:none; border-radius:8px; cursor:pointer; font-weight:700; }
 .read-btn { background:#007bff; color:white; }
@@ -21,17 +23,26 @@ body { font-family: "Roboto", sans-serif; background:#000; color:white; padding:
 #commentSection { margin-top:15px; }
 #commentBox, #submitComment { display:none; margin-top:10px; padding:8px; border-radius:6px; border:1px solid #555; background:#111; color:white; width:100%; }
 #commentsDisplay div { border-top:1px solid #555; padding:5px; }
-.toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:8px; opacity:0; transition:opacity 0.5s ease-in-out; z-index:200; }
+.toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:8px; opacity:0; transition:opacity 0.5s; z-index:200; }
 .toast.show { opacity:1; }
-#taskSection { display:none; margin-top:15px; }
+#taskSection, #claimPopup, #withdrawPopup, #preloadAd { display:none; margin-top:15px; }
+.overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:flex; justify-content:center; align-items:center; z-index:999; flex-direction:column; color:white; }
+.overlay button { margin-top:15px; }
 </style>
 </head>
 <body>
-<div class="header">
+
+<header>
 <h1>Juggearn Bot</h1>
-<div id="pointsDisplay" onclick="openWithdraw()">Balance: 0 pts <i class="fa fa-wallet"></i></div>
+<div id="balanceDisplay">Balance: 0 pts</div>
+</header>
+
+<!-- Preload reward ad -->
+<div class="overlay" id="preloadAd">
+<p>Loading Reward Ad...</p>
 </div>
 
+<div class="container" id="mainContent" style="display:none;">
 <div class="button-container">
 <button class="btn read-btn" onclick="openArticle()">Read & Earn</button>
 <button class="btn task-btn" onclick="showTask()">Task & Earn</button>
@@ -56,9 +67,21 @@ Making money online in 2025 can be very rewarding if you follow a structured pla
 <h3>Complete Task</h3>
 <adsgram-task data-block-id="14240" class="task"></adsgram-task>
 </div>
+</div>
 
-<div class="popup" id="withdrawPopup" style="display:none;">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><h2>Withdraw Balance</h2><span onclick="closeWithdraw()" style="cursor:pointer">X</span></div>
+<!-- Claim More Points Popup -->
+<div class="overlay" id="claimPopup">
+<p>You don’t have enough points! Complete a task to claim more points.</p>
+<div id="claimTaskSection">
+<adsgram-task data-block-id="14240" class="task"></adsgram-task>
+</div>
+<button onclick="closeClaim()">Close</button>
+</div>
+
+<!-- Withdraw Popup -->
+<div class="overlay" id="withdrawPopup">
+<div style="text-align:center;">
+<h2>Withdraw Balance</h2>
 <p>Your balance: <span id="withdrawPoints">0</span> pts</p>
 <select id="withdrawMethod">
 <option value="payeer">Payeer</option>
@@ -67,6 +90,8 @@ Making money online in 2025 can be very rewarding if you follow a structured pla
 <option value="usdt">USDT TRC20</option>
 </select>
 <button class="btn withdraw-btn" onclick="submitWithdraw()">Withdraw</button>
+<button onclick="closeWithdraw()">Close</button>
+</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -75,11 +100,12 @@ Making money online in 2025 can be very rewarding if you follow a structured pla
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-// LocalStorage keys
+// --- LocalStorage keys ---
 const balanceKey = 'user_balance';
 let userBalance = parseInt(localStorage.getItem(balanceKey)) || 0;
-document.getElementById('pointsDisplay').innerText = `Balance: ${userBalance} pts`;
+document.getElementById('balanceDisplay').innerText = `Balance: ${userBalance} pts`;
 
+// --- Toast Helper ---
 function showToast(msg){
     const t = document.getElementById('toast');
     t.innerText = msg;
@@ -87,46 +113,66 @@ function showToast(msg){
     setTimeout(()=>t.classList.remove('show'),2000);
 }
 
-// Reward Block (numeric ID)
+// --- Reward Block ---
 const RewardAd = window.Adsgram.init({ blockId: "14239" });
-function showReward() {
+function showReward(callback){
     RewardAd.show().then(res => {
         if(res.done) addPoints(100,"Reward Block");
+        if(callback) callback();
     }).catch(console.log);
 }
-// Auto show reward ad on page load
-window.addEventListener('load', showReward);
 
-// Task Block cycle (one at a time)
+// --- Preload Ad on page load ---
+window.addEventListener('load', ()=>{
+    document.getElementById('preloadAd').style.display='flex';
+    showReward(()=>{ 
+        document.getElementById('preloadAd').style.display='none';
+        document.getElementById('mainContent').style.display='block';
+    });
+});
+
+// --- Task Block cycle ---
 const taskBlocks = ["14240","14241","14242","14243","14244"];
 let taskIndex = parseInt(localStorage.getItem("taskIndex")||"0");
 
 function showTask() {
     const taskId = taskBlocks[taskIndex];
-    const taskEl = document.querySelector("adsgram-task");
+    const taskEl = document.querySelector("#taskSection adsgram-task");
     taskEl.setAttribute("data-block-id", taskId);
     document.getElementById('taskSection').style.display = "block";
 }
 
 // On task completion
-const taskEl = document.querySelector("adsgram-task");
+const taskEl = document.querySelector("#taskSection adsgram-task");
 taskEl.addEventListener("reward", () => {
     addPoints(100,"Task Block");
     showToast("✅ Task completed!");
-    document.getElementById('taskSection').style.display = "none"; // hide task
-    taskIndex = (taskIndex+1) % taskBlocks.length; // increment & loop
+    document.getElementById('taskSection').style.display = "none";
+    taskIndex = (taskIndex+1) % taskBlocks.length;
     localStorage.setItem("taskIndex", taskIndex);
 });
 
-// Add points helper
+// --- Claim Popup ---
+const claimTaskEl = document.querySelector("#claimTaskSection adsgram-task");
+let claimTaskIndex = parseInt(localStorage.getItem("taskIndex")||"0");
+claimTaskEl.addEventListener("reward", ()=>{
+    addPoints(100,"Claim Task");
+    showToast("✅ Points Claimed!");
+    document.getElementById('claimPopup').style.display='none';
+    claimTaskIndex = (claimTaskIndex+1) % taskBlocks.length;
+    localStorage.setItem("taskIndex", claimTaskIndex);
+});
+function closeClaim(){ document.getElementById('claimPopup').style.display='none'; }
+
+// --- Add Points Helper ---
 function addPoints(points, source){
     userBalance += points;
     localStorage.setItem(balanceKey,userBalance);
-    document.getElementById('pointsDisplay').innerText=`Balance: ${userBalance} pts`;
+    document.getElementById('balanceDisplay').innerText=`Balance: ${userBalance} pts`;
     showToast(`+${points} pts (${source})`);
 }
 
-// Read & Earn / Comment
+// --- Comments ---
 function openArticle(){
     if(userBalance>=2000){
         document.getElementById('commentBox').style.display='block';
@@ -141,39 +187,46 @@ function submitComment(){
     if(userBalance>=2000){
         userBalance -= 2000;
         localStorage.setItem(balanceKey,userBalance);
-        document.getElementById('pointsDisplay').innerText=`Balance: ${userBalance} pts`;
+        document.getElementById('balanceDisplay').innerText=`Balance: ${userBalance} pts`;
         const comment = document.getElementById('commentBox').value;
         const div = document.createElement('div');
         div.innerText = comment;
         document.getElementById('commentsDisplay').appendChild(div);
         document.getElementById('commentBox').value='';
         showToast("Comment submitted and 2000 pts deducted!");
-    } else showToast("Insufficient funds! Watch more ads.");
+    } else {
+        showToast("You don’t have enough points! Claim more.");
+        document.getElementById('claimPopup').style.display='flex';
+    }
 }
 
-// Referral
+// --- Referral ---
 function copyReferral(){
     const ref = `https://t.me/Juggearn_bot?start=${Math.floor(Math.random()*1000000)}`;
     navigator.clipboard.writeText(ref);
     showToast("Referral link copied!");
 }
 
-// Withdraw
+// --- Withdraw ---
 const MIN_WITHDRAW = 50000;
 function openWithdraw(){
-    document.getElementById('withdrawPopup').style.display='block';
+    document.getElementById('withdrawPopup').style.display='flex';
     document.getElementById('withdrawPoints').innerText=userBalance;
 }
 function closeWithdraw(){ document.getElementById('withdrawPopup').style.display='none'; }
 function submitWithdraw(){
-    if(userBalance<MIN_WITHDRAW){ alert("You don’t have enough funds, watch more ads."); return; }
+    if(userBalance<MIN_WITHDRAW){ 
+        alert("You don’t have enough funds, watch more ads."); 
+        return; 
+    }
     const method = document.getElementById('withdrawMethod').value;
     userBalance -= MIN_WITHDRAW;
     localStorage.setItem(balanceKey,userBalance);
     showToast(`Withdrawal of ${MIN_WITHDRAW} pts via ${method} requested!`);
     closeWithdraw();
-    document.getElementById('pointsDisplay').innerText=`Balance: ${userBalance} pts`;
+    document.getElementById('balanceDisplay').innerText=`Balance: ${userBalance} pts`;
 }
 </script>
+
 </body>
 </html>
