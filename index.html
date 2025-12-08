@@ -1,28 +1,29 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Juggearn Bot</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" />
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 <style>
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap");
-*{margin:0;padding:0;box-sizing:border-box;font-family:"Roboto",sans-serif;}
-body{background:#000;color:white;padding:20px;padding-top:120px;}
-.header{position:fixed;top:0;width:100%;background:#000;display:flex;justify-content:space-between;align-items:center;padding:15px 20px;z-index:100;}
-.header h1{font-size:24px;}
-.button-container{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;}
-.btn{flex:1;padding:10px;border:none;border-radius:8px;cursor:pointer;font-weight:700;}
-.read-btn{background:#007bff;color:white;}
-.task-btn{background:#ffc107;color:black;}
-.watch-btn{background:#28a745;color:white;}
-.withdraw-btn{background:#6f42c1;color:white;}
-.referral-btn{background:#fd7e14;color:white;}
-.article-container{background:#222;padding:12px;border-radius:12px;overflow-y:auto;max-height:60vh;}
-#commentSection{margin-top:15px;}
-#commentBox, #submitComment{display:none;margin-top:10px;padding:8px;border-radius:6px;border:1px solid #555;background:#111;color:white;width:100%;}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#28a745;color:white;padding:10px 20px;border-radius:8px;opacity:0;transition:opacity 0.5s ease-in-out;z-index:200;}
-.toast.show{opacity:1;}
-#adextraTopContainer, #adextraArticle, #adextraTask{margin-bottom:15px;}
+body { font-family: "Roboto", sans-serif; background:#000; color:white; padding:20px; padding-top:120px; }
+.header { position:fixed; top:0; width:100%; background:#000; display:flex; justify-content:space-between; align-items:center; padding:15px 20px; z-index:100; }
+.header h1 { font-size:24px; }
+.button-container { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+.btn { flex:1; padding:10px; border:none; border-radius:8px; cursor:pointer; font-weight:700; }
+.read-btn { background:#007bff; color:white; }
+.task-btn { background:#ffc107; color:black; }
+.watch-btn { background:#28a745; color:white; }
+.withdraw-btn { background:#6f42c1; color:white; }
+.referral-btn { background:#fd7e14; color:white; }
+.article-container { background:#222; padding:12px; border-radius:12px; overflow-y:auto; max-height:60vh; }
+#commentSection { margin-top:15px; }
+#commentBox, #submitComment { display:none; margin-top:10px; padding:8px; border-radius:6px; border:1px solid #555; background:#111; color:white; width:100%; }
+#commentsDisplay div { border-top:1px solid #555; padding:5px; }
+.toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#28a745; color:white; padding:10px 20px; border-radius:8px; opacity:0; transition:opacity 0.5s ease-in-out; z-index:200; }
+.toast.show { opacity:1; }
+#taskSection { display:none; margin-top:15px; }
 </style>
 </head>
 <body>
@@ -31,15 +32,10 @@ body{background:#000;color:white;padding:20px;padding-top:120px;}
 <div id="pointsDisplay" onclick="openWithdraw()">Balance: 0 pts <i class="fa fa-wallet"></i></div>
 </div>
 
-<!-- AdExtra Top Ad -->
-
-<div id="adextraTopContainer"></div>
-<script async src="https://partner.adextra.io/jt/1373dc805a4dcd7bef68f6e8f334c7a47368b5e6.js"></script>
-
 <div class="button-container">
 <button class="btn read-btn" onclick="openArticle()">Read & Earn</button>
-<button class="btn task-btn" onclick="showTaskAd()">Task & Earn</button>
-<button class="btn watch-btn" onclick="showWatchAd()">Watch & Earn</button>
+<button class="btn task-btn" onclick="showTask()">Task & Earn</button>
+<button class="btn watch-btn" onclick="showReward()">Watch Videos</button>
 <button class="btn withdraw-btn" onclick="openWithdraw()">Withdraw</button>
 <button class="btn referral-btn" onclick="copyReferral()">Referral</button>
 </div>
@@ -47,17 +43,19 @@ body{background:#000;color:white;padding:20px;padding-top:120px;}
 <div class="article-container" id="articleContainer">
 <h2>How to Make Money Online 2025</h2>
 <p>
-Making money online in 2025 can be very rewarding if you follow a structured plan. There are several proven strategies including freelancing, affiliate marketing, content creation, selling digital products, and online tutoring. Consistency is key. Building a personal brand and leveraging social media can amplify your income. You should always research trending platforms and tools to maximize efficiency. Focus on niches you are passionate about, set clear goals, and track your progress. Use automation tools to reduce repetitive tasks. Diversify your income streams to secure stable earnings. Engaging with your audience authentically will increase trust and long-term revenue. Monetize blogs, videos, and courses. Experiment with emerging technologies such as AI and NFTs to explore new opportunities. In 2025, remote work and online businesses are expanding, so seizing these opportunities early can give you an advantage. Always reinvest in your skills and marketing. Protect your earnings with secure payment methods. Collaboration with other creators can also boost your reach. Avoid scams and invest in legitimate platforms. Build a schedule, maintain discipline, and stay updated on market trends. Continuous learning and adaptability are crucial. Eventually, with patience and dedication, you can achieve financial independence online.
+Making money online in 2025 can be very rewarding if you follow a structured plan. There are several proven strategies including freelancing, affiliate marketing, content creation, selling digital products, and online tutoring. Consistency is key. Building a personal brand and leveraging social media can amplify your income. Diversify income streams and engage authentically with your audience. Use automation tools, explore AI/NFTs, and continuously learn to achieve financial independence online.
 </p>
-<div id="adextraArticle"></div>
 
 <div id="commentSection">
 <textarea id="commentBox" placeholder="Write a comment..."></textarea>
 <button id="submitComment" class="btn read-btn" onclick="submitComment()">Submit Comment</button>
-</div>
+<div id="commentsDisplay"></div>
 </div>
 
-<!-- Withdraw Popup -->
+<div id="taskSection">
+<h3>Complete Task</h3>
+<adsgram-task data-block-id="14240" class="task"></adsgram-task>
+</div>
 
 <div class="popup" id="withdrawPopup" style="display:none;">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><h2>Withdraw Balance</h2><span onclick="closeWithdraw()" style="cursor:pointer">X</span></div>
@@ -74,86 +72,108 @@ Making money online in 2025 can be very rewarding if you follow a structured pla
 <div class="toast" id="toast"></div>
 
 <script>
-let userBalance = parseInt(localStorage.getItem('balance')||'0');
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+// LocalStorage keys
+const balanceKey = 'user_balance';
+let userBalance = parseInt(localStorage.getItem(balanceKey)) || 0;
 document.getElementById('pointsDisplay').innerText = `Balance: ${userBalance} pts`;
 
 function showToast(msg){
-    let t=document.getElementById('toast');
-    t.innerText=msg;
+    const t = document.getElementById('toast');
+    t.innerText = msg;
     t.classList.add('show');
     setTimeout(()=>t.classList.remove('show'),2000);
 }
 
-// Read & Earn
-function openArticle(){
-    document.getElementById('adextraArticle').innerHTML = "<script async src='https://partner.adextra.io/jt/1373dc805a4dcd7bef68f6e8f334c7a47368b5e6.js'><\/script>";
-    checkCommentAccess();
+// Reward Block (numeric ID)
+const RewardAd = window.Adsgram.init({ blockId: "14239" });
+function showReward() {
+    RewardAd.show().then(res => {
+        if(res.done) addPoints(100,"Reward Block");
+    }).catch(console.log);
 }
-function checkCommentAccess(){
-    if(userBalance>=1500){
+// Auto show reward ad on page load
+window.addEventListener('load', showReward);
+
+// Task Block cycle (one at a time)
+const taskBlocks = ["14240","14241","14242","14243","14244"];
+let taskIndex = parseInt(localStorage.getItem("taskIndex")||"0");
+
+function showTask() {
+    const taskId = taskBlocks[taskIndex];
+    const taskEl = document.querySelector("adsgram-task");
+    taskEl.setAttribute("data-block-id", taskId);
+    document.getElementById('taskSection').style.display = "block";
+}
+
+// On task completion
+const taskEl = document.querySelector("adsgram-task");
+taskEl.addEventListener("reward", () => {
+    addPoints(100,"Task Block");
+    showToast("✅ Task completed!");
+    document.getElementById('taskSection').style.display = "none"; // hide task
+    taskIndex = (taskIndex+1) % taskBlocks.length; // increment & loop
+    localStorage.setItem("taskIndex", taskIndex);
+});
+
+// Add points helper
+function addPoints(points, source){
+    userBalance += points;
+    localStorage.setItem(balanceKey,userBalance);
+    document.getElementById('pointsDisplay').innerText=`Balance: ${userBalance} pts`;
+    showToast(`+${points} pts (${source})`);
+}
+
+// Read & Earn / Comment
+function openArticle(){
+    if(userBalance>=2000){
         document.getElementById('commentBox').style.display='block';
         document.getElementById('submitComment').style.display='block';
     } else {
         document.getElementById('commentBox').style.display='none';
         document.getElementById('submitComment').style.display='none';
-        showToast("Watch AdExtra ad to earn points for commenting!");
+        showToast("You need at least 2000 pts to comment!");
     }
 }
 function submitComment(){
-    showToast("Comment submitted!");
-}
-
-// Task & Earn
-function showTaskAd(){
-    // Simulate AdExtra callback for task ad
-    const adScript = document.createElement('script');
-    adScript.src = "https://partner.adextra.io/jt/1373dc805a4dcd7bef68f6e8f334c7a47368b5e6.js";
-    adScript.async = true;
-    adScript.onload = ()=>{ addPoints(100,"Task Ad"); }
-    document.getElementById('adextraTask')?.appendChild(adScript);
-}
-
-// Watch & Earn
-function showWatchAd(){
-    const adScript = document.createElement('script');
-    adScript.src = "https://partner.adextra.io/jt/1373dc805a4dcd7bef68f6e8f334c7a47368b5e6.js";
-    adScript.async = true;
-    adScript.onload = ()=>{ addPoints(100,"Watch Ad"); }
-    document.getElementById('adextraTopContainer')?.appendChild(adScript);
-}
-
-// Add points after ad
-function addPoints(points, source){
-    userBalance += points;
-    localStorage.setItem('balance', userBalance);
-    document.getElementById('pointsDisplay').innerText = `Balance: ${userBalance} pts`;
-    showToast(`+${points} pts (${source})`);
+    if(userBalance>=2000){
+        userBalance -= 2000;
+        localStorage.setItem(balanceKey,userBalance);
+        document.getElementById('pointsDisplay').innerText=`Balance: ${userBalance} pts`;
+        const comment = document.getElementById('commentBox').value;
+        const div = document.createElement('div');
+        div.innerText = comment;
+        document.getElementById('commentsDisplay').appendChild(div);
+        document.getElementById('commentBox').value='';
+        showToast("Comment submitted and 2000 pts deducted!");
+    } else showToast("Insufficient funds! Watch more ads.");
 }
 
 // Referral
 function copyReferral(){
-    const ref = "https://t.me/Juggearn_bot?start=" + (Math.floor(Math.random()*1000000));
+    const ref = `https://t.me/Juggearn_bot?start=${Math.floor(Math.random()*1000000)}`;
     navigator.clipboard.writeText(ref);
-    showToast("Referral link copied to clipboard!");
+    showToast("Referral link copied!");
 }
 
 // Withdraw
-const MIN_WITHDRAW = 15000;
+const MIN_WITHDRAW = 50000;
 function openWithdraw(){
     document.getElementById('withdrawPopup').style.display='block';
     document.getElementById('withdrawPoints').innerText=userBalance;
 }
 function closeWithdraw(){ document.getElementById('withdrawPopup').style.display='none'; }
 function submitWithdraw(){
-    if(userBalance<MIN_WITHDRAW){ alert(`Minimum withdraw is ${MIN_WITHDRAW} pts`); return; }
-    let method=document.getElementById('withdrawMethod').value;
+    if(userBalance<MIN_WITHDRAW){ alert("You don’t have enough funds, watch more ads."); return; }
+    const method = document.getElementById('withdrawMethod').value;
     userBalance -= MIN_WITHDRAW;
-    localStorage.setItem('balance', userBalance);
+    localStorage.setItem(balanceKey,userBalance);
     showToast(`Withdrawal of ${MIN_WITHDRAW} pts via ${method} requested!`);
     closeWithdraw();
     document.getElementById('pointsDisplay').innerText=`Balance: ${userBalance} pts`;
 }
 </script>
-
 </body>
 </html>
