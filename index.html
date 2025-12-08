@@ -6,7 +6,6 @@
 <title>Juggearn Bot</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" />
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:"Roboto",sans-serif;}
 body{background:#000;color:white;padding:20px;padding-top:120px;}
@@ -27,7 +26,7 @@ body{background:#000;color:white;padding:20px;padding-top:120px;}
 .toast.show{opacity:1;}
 </style>
 </head>
-<body style="display:none;"> <!-- hide until ad shows -->
+<body style="display:none;">
 
 <div class="header">
 <h1>Juggearn Bot</h1>
@@ -69,7 +68,6 @@ body{background:#000;color:white;padding:20px;padding-top:120px;}
 const tg = window.Telegram.WebApp ?? { sendData: () => {}, expand: () => {} };
 tg.expand();
 
-// Initialize balance
 let storedBalance = parseInt(localStorage.getItem('userBalance'));
 let userBalance = isNaN(storedBalance) ? 0 : storedBalance;
 updateBalance();
@@ -91,11 +89,8 @@ function showToast(msg){
 // --- Adsgram Reward on Page Load ---
 const rewardAd = window.Adsgram.init({ blockId: "14239" });
 rewardAd.show().then(res => {
-  if(res.done){
-    userBalance += 2;
-    saveBalance();
-  }
-  document.body.style.display='block'; // show main page after ad
+  if(res.done){ userBalance += 200; saveBalance(); }
+  document.body.style.display='block';
 }).catch(err=>{
   console.log(err);
   document.body.style.display='block';
@@ -105,15 +100,14 @@ rewardAd.show().then(res => {
 function openArticle(){
   const articleText = `
 <h2>Top 5 Ways to Make Money Online in 2025</h2>
-<p>2025 is the year of digital entrepreneurship. The internet provides countless opportunities to earn money from anywhere in the world. Here are the top ways to make money this year:</p>
+<p>2025 offers huge opportunities for digital income. Freelancing, AI content creation, affiliate marketing, online courses, and smart crypto investing are among the best ways to earn.</p>
 <ol>
-<li><b>Freelancing:</b> Platforms like Upwork, Fiverr, and Freelancer let you offer your skills—writing, design, programming, and more. With demand increasing, freelancing remains a top choice.</li>
-<li><b>AI Content Creation:</b> Tools like ChatGPT allow creating articles, social media posts, and video scripts. Businesses pay for high-quality content fast.</li>
-<li><b>Affiliate Marketing:</b> Promote products online via blogs, YouTube, or social media and earn commissions. Niches like crypto, tech, and health are high paying.</li>
-<li><b>Online Courses & Ebooks:</b> Share your expertise in coding, business, or design. Platforms like Udemy, Teachable, or Gumroad make selling easy.</li>
-<li><b>Crypto & NFT Opportunities:</b> Smart investing in crypto staking, NFT flipping, and play-to-earn games can generate high returns—but requires research.</li>
-</ol>
-<p>Consistency, learning new skills, and leveraging technology will maximize your earning potential in 2025.</p>`;
+<li><b>Freelancing:</b> Offer skills on Fiverr, Upwork, etc.</li>
+<li><b>AI Content:</b> Use ChatGPT to create content for businesses.</li>
+<li><b>Affiliate Marketing:</b> Promote products and earn commissions.</li>
+<li><b>Online Courses & Ebooks:</b> Teach skills and sell online.</li>
+<li><b>Crypto & NFT:</b> Staking, NFTs, and P2E gaming for high returns.</li>
+</ol>`;
   document.getElementById('articleContainer').innerHTML = articleText;
   document.getElementById('commentSection').style.display='block';
 }
@@ -121,7 +115,7 @@ function openArticle(){
 // --- Submit Comment ---
 function submitComment(){
   if(userBalance < 2000){
-    showToast("❌ Not enough points to comment. Claim more points!");
+    showToast("❌ You don't have 2,000 points to comment!");
     showClaimTask();
     return;
   }
@@ -133,7 +127,6 @@ function submitComment(){
 // --- Task & Earn ---
 const taskBlocks = ["14240","14241","14242","14243","14244"];
 let currentTaskIndex = 0;
-
 function showTaskAd(){
   const blockId = taskBlocks[currentTaskIndex];
   const taskContainer = document.createElement('div');
@@ -141,9 +134,9 @@ function showTaskAd(){
   document.body.appendChild(taskContainer);
   const taskEl = taskContainer.querySelector('adsgram-task');
   taskEl.addEventListener('reward', () => {
-    userBalance += 100;
+    userBalance += 1000;
     saveBalance();
-    showToast("✅ Task completed! +100 pts");
+    showToast("✅ Task completed! +1,000 pts");
     currentTaskIndex = (currentTaskIndex + 1) % taskBlocks.length;
     taskContainer.remove();
   }, {once:true});
@@ -159,7 +152,7 @@ function showClaimTask(){
   taskEl.addEventListener('reward', () => {
     userBalance += 2000;
     saveBalance();
-    showToast("✅ Points claimed!");
+    showToast("✅ Points claimed! You can now comment.");
     currentTaskIndex = (currentTaskIndex + 1) % taskBlocks.length;
     claimContainer.remove();
   }, {once:true});
@@ -169,9 +162,9 @@ function showClaimTask(){
 function showWatchAd(){
   rewardAd.show().then(res => {
     if(res.done){
-      userBalance += 100;
+      userBalance += 1000;
       saveBalance();
-      showToast("✅ Video watched! +100 pts");
+      showToast("✅ Video watched! +1,000 pts");
     }
   }).catch(console.log);
 }
@@ -185,24 +178,25 @@ function copyReferral(){
 
 // --- Withdraw ---
 const MIN_WITHDRAW = 50000;
-
 function openWithdraw(){
+  if(userBalance < MIN_WITHDRAW){
+    showToast("❌ You don't have enough funds to withdraw. Minimum 50,000 pts required.");
+    return;
+  }
   document.getElementById('withdrawPopup').style.display='block';
   document.getElementById('withdrawPoints').innerText=userBalance;
 }
-function closeWithdraw(){
-  document.getElementById('withdrawPopup').style.display='none';
-}
+function closeWithdraw(){ document.getElementById('withdrawPopup').style.display='none'; }
 function submitWithdraw(){
   if(userBalance < MIN_WITHDRAW){
-    showToast("❌ Not enough points to withdraw. Earn more!");
+    showToast("❌ You don't have enough funds to withdraw. Minimum 50,000 pts required.");
     return;
   }
   const method = document.getElementById('withdrawMethod').value;
   const details = document.getElementById('withdrawDetails').value.trim();
   if(!details){showToast("❌ Enter account/wallet details."); return;}
   tg.sendData(JSON.stringify({action:"withdraw", amount:MIN_WITHDRAW, method, details}));
-  showToast(`✅ Withdraw request ${MIN_WITHDRAW} pts sent via ${method}`);
+  showToast(`✅ Withdraw request of 50,000 pts sent via ${method}`);
   userBalance -= MIN_WITHDRAW;
   saveBalance();
   closeWithdraw();
