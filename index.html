@@ -120,13 +120,13 @@ function submitComment(){
     return;
   }
 
-  if(userBalance < 2000){
-    showToast("❌ You don't have 2,000 points to comment!");
+  if(userBalance < 3000){
+    showToast("❌ You don't have 3,000 points to comment!");
     showClaimTask();
     return;
   }
 
-  userBalance -= 2000;
+  userBalance -= 3000;
   saveBalance();
 
   showToast("✅ Comment submitted successfully!");
@@ -178,7 +178,7 @@ function showClaimTask(){
   document.body.appendChild(claimContainer);
   const taskEl = claimContainer.querySelector('adsgram-task');
   taskEl.addEventListener('reward', () => {
-    userBalance += 2000;
+    userBalance += 100;
     saveBalance();
     showToast("✅ Points claimed! You can now comment.");
     currentTaskIndex = (currentTaskIndex + 1) % taskBlocks.length;
