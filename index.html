@@ -29,7 +29,7 @@ body{background:#000;color:white;padding:20px;padding-top:120px;}
 <body style="display:none;">
 
 <div class="header">
-<h1>Juggearn Bot</h1>
+<h1>Postcash Bot</h1>
 <div id="pointsDisplay">Balance: 0 pts</div>
 </div>
 
@@ -134,9 +134,9 @@ function showTaskAd(){
   document.body.appendChild(taskContainer);
   const taskEl = taskContainer.querySelector('adsgram-task');
   taskEl.addEventListener('reward', () => {
-    userBalance += 1000;
+    userBalance += 100;
     saveBalance();
-    showToast("✅ Task completed! +1,000 pts");
+    showToast("✅ Task completed! +100 pts");
     currentTaskIndex = (currentTaskIndex + 1) % taskBlocks.length;
     taskContainer.remove();
   }, {once:true});
@@ -162,9 +162,9 @@ function showClaimTask(){
 function showWatchAd(){
   rewardAd.show().then(res => {
     if(res.done){
-      userBalance += 1000;
+      userBalance += 100;
       saveBalance();
-      showToast("✅ Video watched! +1,000 pts");
+      showToast("✅ Video watched! +00 pts");
     }
   }).catch(console.log);
 }
