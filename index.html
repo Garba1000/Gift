@@ -8,7 +8,6 @@
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" />
 <style>
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap");
 *{margin:0;padding:0;box-sizing:border-box;font-family:"Roboto",sans-serif;}
 body{background:#000;color:white;padding:20px;padding-top:120px;}
 .header{position:fixed;top:0;width:100%;background:#000;display:flex;justify-content:space-between;align-items:center;padding:15px 20px;z-index:100;}
@@ -23,11 +22,13 @@ body{background:#000;color:white;padding:20px;padding-top:120px;}
 .article-container{background:#222;padding:12px;border-radius:12px;overflow-y:auto;max-height:60vh;}
 #commentSection{margin-top:15px;}
 #commentBox, #submitComment{display:block;margin-top:10px;padding:8px;border-radius:6px;border:1px solid #555;background:#111;color:white;width:100%;}
+.popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;padding:20px;border-radius:12px;z-index:200;max-width:400px;width:90%;}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#28a745;color:white;padding:10px 20px;border-radius:8px;opacity:0;transition:opacity 0.5s ease-in-out;z-index:200;}
 .toast.show{opacity:1;}
 </style>
 </head>
-<body>
+<body style="display:none;"> <!-- hide until ad shows -->
+
 <div class="header">
 <h1>Juggearn Bot</h1>
 <div id="pointsDisplay">Balance: 0 pts</div>
@@ -48,16 +49,18 @@ body{background:#000;color:white;padding:20px;padding-top:120px;}
 <button id="submitComment" class="btn read-btn" onclick="submitComment()">Submit Comment</button>
 </div>
 
+<!-- Withdraw Popup -->
 <div class="popup" id="withdrawPopup" style="display:none;">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><h2>Withdraw Balance</h2><span onclick="closeWithdraw()" style="cursor:pointer">X</span></div>
 <p>Your balance: <span id="withdrawPoints">0</span> pts</p>
-<select id="withdrawMethod">
+<select id="withdrawMethod" style="margin-bottom:10px;width:100%;padding:8px;border-radius:6px;background:#111;color:white;border:1px solid #555;">
 <option value="payeer">Payeer</option>
 <option value="skrill">Skrill</option>
 <option value="wire">Wire Transfer</option>
 <option value="usdt">USDT TRC20</option>
 </select>
-<button class="btn withdraw-btn" onclick="submitWithdraw()">Withdraw</button>
+<input id="withdrawDetails" placeholder="Account / Wallet details" style="margin-bottom:10px;width:100%;padding:8px;border-radius:6px;background:#111;color:white;border:1px solid #555;">
+<button class="btn withdraw-btn" onclick="submitWithdraw()">Send Withdraw Request</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -74,12 +77,10 @@ updateBalance();
 function updateBalance(){
   document.getElementById('pointsDisplay').innerText = `Balance: ${userBalance} pts`;
 }
-
 function saveBalance(){
   localStorage.setItem('userBalance', userBalance);
   updateBalance();
 }
-
 function showToast(msg){
   const t=document.getElementById('toast');
   t.innerText=msg;
@@ -94,13 +95,25 @@ rewardAd.show().then(res => {
     userBalance += 2;
     saveBalance();
   }
-}).catch(console.log);
+  document.body.style.display='block'; // show main page after ad
+}).catch(err=>{
+  console.log(err);
+  document.body.style.display='block';
+});
 
 // --- Read & Earn ---
 function openArticle(){
   const articleText = `
-<h2>How to Make Money Online 2025</h2>
-<p>${'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(50)}</p>`;
+<h2>Top 5 Ways to Make Money Online in 2025</h2>
+<p>2025 is the year of digital entrepreneurship. The internet provides countless opportunities to earn money from anywhere in the world. Here are the top ways to make money this year:</p>
+<ol>
+<li><b>Freelancing:</b> Platforms like Upwork, Fiverr, and Freelancer let you offer your skills—writing, design, programming, and more. With demand increasing, freelancing remains a top choice.</li>
+<li><b>AI Content Creation:</b> Tools like ChatGPT allow creating articles, social media posts, and video scripts. Businesses pay for high-quality content fast.</li>
+<li><b>Affiliate Marketing:</b> Promote products online via blogs, YouTube, or social media and earn commissions. Niches like crypto, tech, and health are high paying.</li>
+<li><b>Online Courses & Ebooks:</b> Share your expertise in coding, business, or design. Platforms like Udemy, Teachable, or Gumroad make selling easy.</li>
+<li><b>Crypto & NFT Opportunities:</b> Smart investing in crypto staking, NFT flipping, and play-to-earn games can generate high returns—but requires research.</li>
+</ol>
+<p>Consistency, learning new skills, and leveraging technology will maximize your earning potential in 2025.</p>`;
   document.getElementById('articleContainer').innerHTML = articleText;
   document.getElementById('commentSection').style.display='block';
 }
@@ -153,7 +166,7 @@ function showClaimTask(){
 }
 
 // --- Watch Videos ---
-document.querySelector('.watch-btn').addEventListener('click', () => {
+function showWatchAd(){
   rewardAd.show().then(res => {
     if(res.done){
       userBalance += 100;
@@ -161,7 +174,7 @@ document.querySelector('.watch-btn').addEventListener('click', () => {
       showToast("✅ Video watched! +100 pts");
     }
   }).catch(console.log);
-});
+}
 
 // --- Referral ---
 function copyReferral(){
@@ -186,7 +199,9 @@ function submitWithdraw(){
     return;
   }
   const method = document.getElementById('withdrawMethod').value;
-  tg.sendData(JSON.stringify({action:"withdraw", amount:MIN_WITHDRAW, method}));
+  const details = document.getElementById('withdrawDetails').value.trim();
+  if(!details){showToast("❌ Enter account/wallet details."); return;}
+  tg.sendData(JSON.stringify({action:"withdraw", amount:MIN_WITHDRAW, method, details}));
   showToast(`✅ Withdraw request ${MIN_WITHDRAW} pts sent via ${method}`);
   userBalance -= MIN_WITHDRAW;
   saveBalance();
