@@ -8,11 +8,12 @@
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" crossorigin="anonymous" />
 <style>
-body{margin:0;font-family:"Roboto",sans-serif;background:#000;color:#fff;padding:20px;}
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap");
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Roboto",sans-serif;}
+body{background:#000;color:white;padding:20px;padding-top:120px;}
 .header{position:fixed;top:0;width:100%;background:#000;display:flex;justify-content:space-between;align-items:center;padding:15px 20px;z-index:100;}
 .header h1{font-size:24px;}
-.balance-display{margin-top:80px;font-size:18px;text-align:center;}
-.button-container{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0;justify-content:center;}
+.button-container{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;}
 .btn{flex:1;padding:10px;border:none;border-radius:8px;cursor:pointer;font-weight:700;}
 .read-btn{background:#007bff;color:white;}
 .task-btn{background:#ffc107;color:black;}
@@ -21,164 +22,174 @@ body{margin:0;font-family:"Roboto",sans-serif;background:#000;color:#fff;padding
 .referral-btn{background:#fd7e14;color:white;}
 .article-container{background:#222;padding:12px;border-radius:12px;overflow-y:auto;max-height:60vh;}
 #commentSection{margin-top:15px;}
-#commentBox, #submitComment{display:none;margin-top:10px;padding:8px;border-radius:6px;border:1px solid #555;background:#111;color:white;width:100%;}
+#commentBox, #submitComment{display:block;margin-top:10px;padding:8px;border-radius:6px;border:1px solid #555;background:#111;color:white;width:100%;}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#28a745;color:white;padding:10px 20px;border-radius:8px;opacity:0;transition:opacity 0.5s ease-in-out;z-index:200;}
 .toast.show{opacity:1;}
-#taskContainer{margin-top:12px;}
 </style>
 </head>
 <body>
-
 <div class="header">
-  <h1>Juggearn Bot</h1>
-</div>
-
-<div class="balance-display">
-  💰 Balance: <span id="userBalance">0</span> pts
+<h1>Juggearn Bot</h1>
+<div id="pointsDisplay">Balance: 0 pts</div>
 </div>
 
 <div class="button-container">
-  <button class="btn read-btn" onclick="openArticle()">Read & Earn</button>
-  <button class="btn task-btn" onclick="showTask()">Task & Earn</button>
-  <button class="btn watch-btn" onclick="watchRewardAd()">Watch Videos</button>
-  <button class="btn withdraw-btn" onclick="openWithdraw()">Withdraw</button>
-  <button class="btn referral-btn" onclick="copyReferral()">Referral</button>
+<button class="btn read-btn" onclick="openArticle()">Read & Earn</button>
+<button class="btn task-btn" onclick="showTaskAd()">Task & Earn</button>
+<button class="btn watch-btn" onclick="showWatchAd()">Watch Videos</button>
+<button class="btn withdraw-btn" onclick="openWithdraw()">Withdraw</button>
+<button class="btn referral-btn" onclick="copyReferral()">Referral</button>
 </div>
 
-<div class="article-container" id="articleContainer">
-  <h2>How to Make Money Online 2025</h2>
-  <p>
-    Making money online in 2025 can be very rewarding...
-  </p>
-  <div id="commentSection">
-    <textarea id="commentBox" placeholder="Write a comment..."></textarea>
-    <button id="submitComment" class="btn read-btn" onclick="submitComment()">Submit Comment</button>
-  </div>
+<div class="article-container" id="articleContainer"></div>
+
+<div id="commentSection" style="display:none;">
+<textarea id="commentBox" placeholder="Write a comment..."></textarea>
+<button id="submitComment" class="btn read-btn" onclick="submitComment()">Submit Comment</button>
 </div>
 
-<div id="taskContainer"></div>
-
-<!-- Withdraw Popup -->
 <div class="popup" id="withdrawPopup" style="display:none;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-    <h2>Withdraw Balance</h2><span onclick="closeWithdraw()" style="cursor:pointer">X</span>
-  </div>
-  <p>Your balance: <span id="withdrawPoints">0</span> pts</p>
-  <select id="withdrawMethod">
-    <option value="payeer">Payeer</option>
-    <option value="skrill">Skrill</option>
-    <option value="wire">Wire Transfer</option>
-    <option value="usdt">USDT TRC20</option>
-  </select>
-  <button class="btn withdraw-btn" onclick="submitWithdraw()">Withdraw</button>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><h2>Withdraw Balance</h2><span onclick="closeWithdraw()" style="cursor:pointer">X</span></div>
+<p>Your balance: <span id="withdrawPoints">0</span> pts</p>
+<select id="withdrawMethod">
+<option value="payeer">Payeer</option>
+<option value="skrill">Skrill</option>
+<option value="wire">Wire Transfer</option>
+<option value="usdt">USDT TRC20</option>
+</select>
+<button class="btn withdraw-btn" onclick="submitWithdraw()">Withdraw</button>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const tg = window.Telegram.WebApp ?? { sendData:()=>{}, expand:()=>{} }; tg.expand();
+const tg = window.Telegram.WebApp ?? { sendData: () => {}, expand: () => {} };
+tg.expand();
 
-// --- User balance ---
-let userBalance = parseInt(localStorage.getItem('userBalance')||'0');
+// Initialize balance
+let storedBalance = parseInt(localStorage.getItem('userBalance'));
+let userBalance = isNaN(storedBalance) ? 0 : storedBalance;
 updateBalance();
 
+function updateBalance(){
+  document.getElementById('pointsDisplay').innerText = `Balance: ${userBalance} pts`;
+}
+
+function saveBalance(){
+  localStorage.setItem('userBalance', userBalance);
+  updateBalance();
+}
+
 function showToast(msg){
-  const t = document.getElementById('toast');
-  t.innerText = msg;
+  const t=document.getElementById('toast');
+  t.innerText=msg;
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2000);
 }
 
-function updateBalance(){
-  document.getElementById('userBalance').innerText = userBalance;
-}
-
-// --- Reward Ad ---
-const rewardAd = window.Adsgram.init({ blockId:"17602" });
-// Show reward ad automatically on page load
-window.addEventListener('load', ()=>{ 
-  rewardAd.show().then(res=>{ if(res.done){ userBalance+=20; saveBalance(); updateBalance(); }}).catch(console.log); 
-});
-
-// Watch button
-function watchRewardAd(){
-  rewardAd.show().then(res=>{ if(res.done){ userBalance+=20; saveBalance(); updateBalance(); showToast("+20 pts"); }}).catch(console.log);
-}
-
-function saveBalance(){ localStorage.setItem('userBalance', userBalance); }
-
-// --- Task Button (rotating 5 tasks) ---
-const taskBlockIds = ["17599","17600","17601","17602","17603"];
-let currentTaskIndex = 0;
-function showTask(){
-  const taskContainer = document.getElementById('taskContainer');
-  const blockId = taskBlockIds[currentTaskIndex];
-  taskContainer.innerHTML = `<adsgram-task data-block-id="${blockId}" class="task"></adsgram-task>`;
-  const taskEl = taskContainer.querySelector('adsgram-task');
-  taskEl.addEventListener('reward', ()=>{
-    userBalance += 20; saveBalance(); updateBalance(); showToast("+20 pts Task Completed");
-    currentTaskIndex = (currentTaskIndex+1)%taskBlockIds.length;
-    taskContainer.innerHTML = '';
-  }, {once:true});
-}
-
-// --- Article & Comment ---
-function openArticle(){
-  checkCommentAccess();
-}
-
-function checkCommentAccess(){
-  if(userBalance>=2000){
-    document.getElementById('commentBox').style.display='block';
-    document.getElementById('submitComment').style.display='block';
-  } else {
-    document.getElementById('commentBox').style.display='none';
-    document.getElementById('submitComment').style.display='none';
+// --- Adsgram Reward on Page Load ---
+const rewardAd = window.Adsgram.init({ blockId: "14239" });
+rewardAd.show().then(res => {
+  if(res.done){
+    userBalance += 2;
+    saveBalance();
   }
+}).catch(console.log);
+
+// --- Read & Earn ---
+function openArticle(){
+  const articleText = `
+<h2>How to Make Money Online 2025</h2>
+<p>${'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(50)}</p>`;
+  document.getElementById('articleContainer').innerHTML = articleText;
+  document.getElementById('commentSection').style.display='block';
 }
 
+// --- Submit Comment ---
 function submitComment(){
-  if(userBalance<2000){ 
-    showToast("❌ Not enough points. Claim more points.");
-    showClaimTaskPopup();
+  if(userBalance < 2000){
+    showToast("❌ Not enough points to comment. Claim more points!");
+    showClaimTask();
     return;
   }
-  userBalance -= 2000; saveBalance(); updateBalance(); 
-  showToast("Comment submitted! -2000 pts");
+  userBalance -= 2000;
+  saveBalance();
+  showToast("✅ Comment submitted!");
 }
 
-function showClaimTaskPopup(){
-  const taskContainer = document.getElementById('taskContainer');
-  const blockId = taskBlockIds[currentTaskIndex];
+// --- Task & Earn ---
+const taskBlocks = ["14240","14241","14242","14243","14244"];
+let currentTaskIndex = 0;
+
+function showTaskAd(){
+  const blockId = taskBlocks[currentTaskIndex];
+  const taskContainer = document.createElement('div');
   taskContainer.innerHTML = `<adsgram-task data-block-id="${blockId}" class="task"></adsgram-task>`;
+  document.body.appendChild(taskContainer);
   const taskEl = taskContainer.querySelector('adsgram-task');
-  taskEl.addEventListener('reward', ()=>{
-    userBalance += 20; saveBalance(); updateBalance(); showToast("+20 pts");
-    currentTaskIndex = (currentTaskIndex+1)%taskBlockIds.length;
-    taskContainer.innerHTML = '';
+  taskEl.addEventListener('reward', () => {
+    userBalance += 100;
+    saveBalance();
+    showToast("✅ Task completed! +100 pts");
+    currentTaskIndex = (currentTaskIndex + 1) % taskBlocks.length;
+    taskContainer.remove();
   }, {once:true});
 }
+
+// --- Claim Task if comment points insufficient ---
+function showClaimTask(){
+  const blockId = taskBlocks[currentTaskIndex];
+  const claimContainer = document.createElement('div');
+  claimContainer.innerHTML = `<adsgram-task data-block-id="${blockId}" class="task"></adsgram-task>`;
+  document.body.appendChild(claimContainer);
+  const taskEl = claimContainer.querySelector('adsgram-task');
+  taskEl.addEventListener('reward', () => {
+    userBalance += 2000;
+    saveBalance();
+    showToast("✅ Points claimed!");
+    currentTaskIndex = (currentTaskIndex + 1) % taskBlocks.length;
+    claimContainer.remove();
+  }, {once:true});
+}
+
+// --- Watch Videos ---
+document.querySelector('.watch-btn').addEventListener('click', () => {
+  rewardAd.show().then(res => {
+    if(res.done){
+      userBalance += 100;
+      saveBalance();
+      showToast("✅ Video watched! +100 pts");
+    }
+  }).catch(console.log);
+});
 
 // --- Referral ---
 function copyReferral(){
-  const uid = tg.initDataUnsafe?.user?.id || Math.floor(Math.random()*1e6);
-  navigator.clipboard.writeText(`https://t.me/Juggearn_bot?start=${uid}`);
+  const ref = `https://t.me/Juggearn_bot?start=${Math.floor(Math.random()*1000000)}`;
+  navigator.clipboard.writeText(ref);
   showToast("Referral link copied!");
 }
 
 // --- Withdraw ---
 const MIN_WITHDRAW = 50000;
+
 function openWithdraw(){
   document.getElementById('withdrawPopup').style.display='block';
-  document.getElementById('withdrawPoints').innerText = userBalance;
+  document.getElementById('withdrawPoints').innerText=userBalance;
 }
-function closeWithdraw(){ document.getElementById('withdrawPopup').style.display='none'; }
+function closeWithdraw(){
+  document.getElementById('withdrawPopup').style.display='none';
+}
 function submitWithdraw(){
-  if(userBalance<MIN_WITHDRAW){ showToast("❌ Not enough points to withdraw. Earn more!"); return; }
+  if(userBalance < MIN_WITHDRAW){
+    showToast("❌ Not enough points to withdraw. Earn more!");
+    return;
+  }
   const method = document.getElementById('withdrawMethod').value;
-  userBalance -= MIN_WITHDRAW; saveBalance(); updateBalance();
   tg.sendData(JSON.stringify({action:"withdraw", amount:MIN_WITHDRAW, method}));
   showToast(`✅ Withdraw request ${MIN_WITHDRAW} pts sent via ${method}`);
+  userBalance -= MIN_WITHDRAW;
+  saveBalance();
   closeWithdraw();
 }
 </script>
