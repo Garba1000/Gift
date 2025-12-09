@@ -88,7 +88,7 @@ function showToast(msg){
 // --- Adsgram Reward on Page Load ---
 const rewardAd = window.Adsgram.init({ blockId: "18791" });
 rewardAd.show().then(res => {
-  if(res.done){ userBalance += 200; saveBalance(); }
+  if(res.done){ userBalance += 100; saveBalance(); }
   document.body.style.display='block';
 }).catch(err=>{
   console.log(err);
@@ -120,13 +120,13 @@ function submitComment(){
     return;
   }
 
-  if(userBalance < 3000){
-    showToast("❌ You don't have 3,000 points to comment!");
+  if(userBalance < 4000){
+    showToast("❌ You don't have 4,000 points to comment!");
     showClaimTask();
     return;
   }
 
-  userBalance -= 3000;
+  userBalance -= 4000;
   saveBalance();
 
   showToast("✅ Comment submitted successfully!");
