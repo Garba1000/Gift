@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Postcash Bot</title>
+<title>Read an earn Bot</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 <style>
@@ -86,7 +86,7 @@ function showToast(msg){
 }
 
 // --- Adsgram Reward on Page Load ---
-const rewardAd = window.Adsgram.init({ blockId: "18791" });
+const rewardAd = window.Adsgram.init({ blockId: "18932" });
 rewardAd.show().then(res => {
   if(res.done){ userBalance += 100; saveBalance(); }
   document.body.style.display='block';
@@ -153,7 +153,7 @@ function submitComment(){
 }
 
 // --- Task & Earn ---
-const taskBlocks = ["task-18801","task-18800","task-18796","task-18797","task-18799"];
+const taskBlocks = ["task-18933","task-18934","task-18935","task-18937","task-18936"];
 let currentTaskIndex = 0;
 function showTaskAd(){
   const blockId = taskBlocks[currentTaskIndex];
