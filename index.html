@@ -120,8 +120,8 @@ function submitComment(){
     return;
   }
 
-  if(userBalance < 4000){
-    showToast("❌ You don't have 4,000 points to comment!");
+  if(userBalance < 100){
+    showToast("❌ You don't have 100 points to comment!");
     showClaimTask();
     return;
   }
