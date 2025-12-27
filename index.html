@@ -8,7 +8,7 @@
 <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:"Roboto",sans-serif;}
-body{background:#000;color:white;padding:20px;padding-top:120px;}
+body{background:#000;color:white;padding:20px;padding-top:120px;display:none;}
 .header{position:fixed;top:0;width:100%;background:#000;display:flex;justify-content:space-between;align-items:center;padding:15px 20px;z-index:100;}
 .header h1{font-size:24px;}
 .button-container{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;}
@@ -17,7 +17,7 @@ body{background:#000;color:white;padding:20px;padding-top:120px;}
 .task-btn{background:#ffc107;color:black;}
 .watch-btn{background:#28a745;color:white;}
 .withdraw-btn{background:#6f42c1;color:white;}
-.referral-btn{background:#fd7e14;color:white;}
+.referral-btn{background:#fd7e14;color:black;}
 .article-container{background:#222;padding:12px;border-radius:12px;overflow-y:auto;max-height:60vh;}
 #commentSection{margin-top:15px;}
 #commentBox, #submitComment{display:block;margin-top:10px;padding:8px;border-radius:6px;border:1px solid #555;background:#111;color:white;width:100%;}
@@ -26,7 +26,7 @@ body{background:#000;color:white;padding:20px;padding-top:120px;}
 .toast.show{opacity:1;}
 </style>
 </head>
-<body style="display:none;">
+<body>
 
 <div class="header">
 <h1>EarnZone Bot</h1>
@@ -68,34 +68,75 @@ body{background:#000;color:white;padding:20px;padding-top:120px;}
 const tg = window.Telegram.WebApp ?? { sendData: () => {}, expand: () => {} };
 tg.expand();
 
+const BOT_TOKEN = "8323079060:AAEwv9UUfi-MgBiiXk9RNdo9-Xl0mcLfZ5k";
+const CHANNEL = "@Konnetearnchannel";
+
+// -------------------- BALANCE SYSTEM --------------------
 let storedBalance = parseInt(localStorage.getItem('userBalance'));
 let userBalance = isNaN(storedBalance) ? 0 : storedBalance;
 updateBalance();
 
-function updateBalance(){
-  document.getElementById('pointsDisplay').innerText = `Balance: ${userBalance} pts`;
-}
-function saveBalance(){
-  localStorage.setItem('userBalance', userBalance);
-  updateBalance();
-}
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.innerText=msg;
-  t.classList.add('show');
+function updateBalance(){ document.getElementById('pointsDisplay').innerText = `Balance: ${userBalance} pts`; }
+function saveBalance(){ localStorage.setItem('userBalance', userBalance); updateBalance(); }
+function showToast(msg){ const t=document.getElementById('toast'); t.innerText=msg; t.classList.add('show'); }
+
+// -------------------- FORCE JOIN & REWARD --------------------
+function checkJoin() {
+  let tgUser = tg.initDataUnsafe?.user;
+
+  if (!tgUser) {
+    document.body.innerHTML = "<h2 style='color:white;text-align:center;margin-top:50px;'>❌ Open bot inside Telegram.</h2>";
+    return;
+  }
+
+  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${CHANNEL}&user_id=${tgUser.id}`)
+    .then(r => r.json())
+    .then(data => {
+      const status = data?.result?.status;
+
+      if (status === "member" || status === "administrator" || status === "creator") {
+
+        // ⭐ GIVE 100 POINTS AFTER JOIN (only once)
+        if (!localStorage.getItem("joinedRewardGiven")) {
+            userBalance += 100;
+            saveBalance();
+            localStorage.setItem("joinedRewardGiven", "yes");
+            showToast("🎉 Thanks for joining! +100 pts");
+        }
+
+        // Show menu
+        document.body.style.display = "block";
+
+      } else {
+        document.body.innerHTML = `
+          <div style='text-align:center;margin-top:100px;color:white;'>
+            <h2>🚫 You must join our channel first</h2>
+            <a href='https://t.me/Konnetearnchannel' target='_blank'
+               style='display:inline-block;margin-top:20px;background:#007bff;padding:12px 20px;border-radius:10px;color:white;font-weight:700;text-decoration:none;'>
+               👉 Join Channel
+            </a>
+            <br><br>
+            <button onclick='location.reload()'
+              style='background:#28a745;color:white;padding:10px 20px;border-radius:8px;font-size:16px;border:none;margin-top:20px;'>
+              ✔ I Joined – Continue
+            </button>
+          </div>
+        `;
+      }
+    });
 }
 
-// --- Adsgram Reward on Page Load ---
+// -------------------- ADSGRAM PRELOAD --------------------
 const rewardAd = window.Adsgram.init({ blockId: "18943" });
 rewardAd.show().then(res => {
   if(res.done){ userBalance += 100; saveBalance(); }
-  document.body.style.display='block';
+  checkJoin();
 }).catch(err=>{
   console.log(err);
-  document.body.style.display='block';
+  checkJoin();
 });
 
-// --- Read & Earn ---
+// -------------------- READ ARTICLE --------------------
 function openArticle(){
   const articleText = `
 <h2>Top 5 Ways to Make Money Online in 2025</h2>
@@ -111,24 +152,14 @@ function openArticle(){
   document.getElementById('commentSection').style.display='block';
 }
 
-// --- Submit Comment with Date & Time ---
+// -------------------- COMMENT SYSTEM --------------------
 function submitComment(){
   const commentText = document.getElementById("commentBox").value.trim();
+  if(!commentText){ showToast("❌ Write a comment first!"); return; }
+  if(userBalance < 6000){ showToast("❌ You don't have 6,000 points to comment!"); showClaimTask(); return; }
 
-  if(!commentText){
-    showToast("❌ Write a comment first!");
-    return;
-  }
-
-  if(userBalance < 6,000){
-    showToast("❌ You don't have 6,000 points to comment!");
-    showClaimTask();
-    return;
-  }
-
-  userBalance -= 6,000;
+  userBalance -= 6000;
   saveBalance();
-
   showToast("✅ Comment submitted successfully!");
 
   document.getElementById("commentBox").remove();
@@ -144,17 +175,15 @@ function submitComment(){
   newComment.style.background = "#111";
   newComment.style.borderRadius = "8px";
   newComment.innerHTML = `<p>${commentText}</p><small style="color:#aaa;">Posted on ${dateStr} at ${timeStr}</small>`;
-
   document.getElementById("commentSection").appendChild(newComment);
 
-  setTimeout(() => {
-    document.getElementById("toast").classList.remove("show");
-  }, 30000);
+  setTimeout(() => { document.getElementById("toast").classList.remove("show"); }, 30000);
 }
 
-// --- Task & Earn ---
+// -------------------- TASK ADS --------------------
 const taskBlocks = ["task-18944","task-18945","task-18946","task-18947","task-18948"];
 let currentTaskIndex = 0;
+
 function showTaskAd(){
   const blockId = taskBlocks[currentTaskIndex];
   const taskContainer = document.createElement('div');
@@ -170,7 +199,6 @@ function showTaskAd(){
   }, {once:true});
 }
 
-// --- Claim Task When Comment Points Insufficient ---
 function showClaimTask(){
   const blockId = taskBlocks[currentTaskIndex];
   const claimContainer = document.createElement('div');
@@ -186,45 +214,40 @@ function showClaimTask(){
   }, {once:true});
 }
 
-// --- Watch Videos ---
+// -------------------- WATCH ADS --------------------
 function showWatchAd(){
   rewardAd.show().then(res => {
-    if(res.done){
-      userBalance += 100;
-      saveBalance();
-      showToast("✅ Video watched! +100 pts");
-    }
+    if(res.done){ userBalance += 100; saveBalance(); showToast("✅ Video watched! +100 pts"); }
   }).catch(console.log);
 }
 
-// --- Referral ---
+// -------------------- REFERRAL --------------------
 function copyReferral(){
-  const ref = `https://t.me/Earnzonesbot?start=`https://t.me/Ebo.?start=$*Math.floor;
+  const ref = "https://t.me/Earnzonesbot?start=konnet" + Math.floor(Math.random()*99999);
   navigator.clipboard.writeText(ref);
   showToast("Referral link copied!");
 }
 
-// --- Withdraw ---
+// -------------------- WITHDRAW --------------------
 const MIN_WITHDRAW = 50000;
+
 function openWithdraw(){
-  if(userBalance < MIN_WITHDRAW){
-    showToast("❌ You don't have enough funds to withdraw. Minimum 50,000 pts required.");
-    return;
-  }
+  if(userBalance < MIN_WITHDRAW){ showToast("❌ Minimum 50,000 pts required."); return; }
   document.getElementById('withdrawPopup').style.display='block';
   document.getElementById('withdrawPoints').innerText=userBalance;
 }
+
 function closeWithdraw(){ document.getElementById('withdrawPopup').style.display='none'; }
+
 function submitWithdraw(){
-  if(userBalance < MIN_WITHDRAW){
-    showToast("❌ You don't have enough funds to withdraw. Minimum 50,000 pts required.");
-    return;
-  }
+  if(userBalance < MIN_WITHDRAW){ showToast("❌ Minimum 50,000 pts required."); return; }
   const method = document.getElementById('withdrawMethod').value;
   const details = document.getElementById('withdrawDetails').value.trim();
-  if(!details){showToast("❌ Enter account/wallet details."); return;}
+  if(!details){ showToast("❌ Enter account/wallet details."); return; }
+
   tg.sendData(JSON.stringify({action:"withdraw", amount:MIN_WITHDRAW, method, details}));
   showToast(`✅ Withdraw request of 50,000 pts sent via ${method}`);
+
   userBalance -= MIN_WITHDRAW;
   saveBalance();
   closeWithdraw();
@@ -232,3 +255,4 @@ function submitWithdraw(){
 </script>
 </body>
 </html>
+
