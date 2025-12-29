@@ -138,8 +138,8 @@ function openArticle(){
 function submitComment(){
   const commentText = document.getElementById("commentBox").value.trim();
   if(!commentText){ showToast("❌ Write a comment first!"); return; }
-  if(userBalance < 6000){ showToast("❌ You don't have 6,000 points to comment!"); return; }
-  userBalance -= 6000; saveBalance();
+  if(userBalance < 600){ showToast("❌ You don't have 600 points to comment!"); return; }
+  userBalance -= 600; saveBalance();
   showToast("✅ Comment submitted successfully!");
   document.getElementById("commentBox").remove();
   document.getElementById("submitComment").remove();
