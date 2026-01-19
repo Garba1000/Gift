@@ -104,7 +104,7 @@ rewardAd.show().then(res => {
   document.getElementById("joinPopup").style.display = "flex";
 });
 
-// --------------------- JOIN BUTTON ---------------------
+// JOIN BUTTON
 function joinChannelClicked(){
   if(!localStorage.getItem("joinedRewardGiven")){
     userBalance += 100;
@@ -115,7 +115,7 @@ function joinChannelClicked(){
   document.getElementById("joinPopup").style.display = "none";
 }
 
-// --------------------- READ & EARN ---------------------
+// READ ARTICLE
 function openArticle(){
   const articleText = `
 <h2>Top 5 Ways to Make Money Online in 2025</h2>
@@ -131,7 +131,7 @@ function openArticle(){
   document.getElementById('commentSection').style.display='block';
 }
 
-// --- Submit Comment ---
+// COMMENT SUBMIT
 function submitComment(){
   const commentText = document.getElementById("commentBox").value.trim();
   if(!commentText){ showToast("❌ Write a comment first!"); return; }
@@ -142,13 +142,11 @@ function submitComment(){
   document.getElementById("submitComment").remove();
 }
 
-// --- Task & Earn ---
-// UPDATED → only TWO block IDs now
-const taskBlocks = ["task-20278", "task-20279"];
-let currentTaskIndex = 0;
+// --- TASK & EARN (UPDATED RANDOM) ---
+const taskBlocks = ["task-20278","task-20279","task-20280","task-21375","task-21374"];
 
 function showTaskAd(){
-  const blockId = taskBlocks[currentTaskIndex];
+  const blockId = taskBlocks[Math.floor(Math.random() * taskBlocks.length)];
   const taskContainer = document.createElement('div');
   taskContainer.innerHTML = `<adsgram-task data-block-id="${blockId}" class="task"></adsgram-task>`;
   document.body.appendChild(taskContainer);
@@ -159,46 +157,44 @@ function showTaskAd(){
     userBalance += 100;
     saveBalance();
     showToast("✅ Task completed! +100 pts");
-
-    currentTaskIndex = (currentTaskIndex + 1) % taskBlocks.length;
-
     taskContainer.remove();
-  }, { once: true });
+  }, {once:true});
 }
 
-// --- Watch Videos ---
+// WATCH VIDEO
 function showWatchAd(){
   rewardAd.show().then(res => {
     if(res.done){ userBalance += 100; saveBalance(); showToast("✅ Video watched! +100 pts"); }
   }).catch(console.log);
 }
 
-// --- Referral ---
+// REFERRAL
 function copyReferral(){
   const ref = "https://t.me/Earnzonesbot?start=konnet" + Math.floor(Math.random()*99999);
   navigator.clipboard.writeText(ref);
   showToast("Referral link copied!");
 }
 
-// --- Withdraw ---
+// WITHDRAW
 const MIN_WITHDRAW = 50000;
 function openWithdraw(){
   if(userBalance < MIN_WITHDRAW){ showToast("❌ Minimum 50,000 pts required."); return; }
   document.getElementById('withdrawPopup').style.display='block';
   document.getElementById('withdrawPoints').innerText=userBalance;
 }
-function closeWithdraw(){ document.getElementById('withdrawPopup').style.display='none'; }
+function closeWithdraw(){
+  document.getElementById('withdrawPopup').style.display='none';
+}
 function submitWithdraw(){
   if(userBalance < MIN_WITHDRAW){ showToast("❌ Minimum 50,000 pts required."); return; }
   const method = document.getElementById('withdrawMethod').value;
   const details = document.getElementById('withdrawDetails').value.trim();
-  if(!details){showToast("❌ Enter account/wallet details."); return;}
+  if(!details){ showToast("❌ Enter account/wallet details."); return; }
   tg.sendData(JSON.stringify({action:"withdraw", amount:MIN_WITHDRAW, method, details}));
   showToast(`✅ Withdraw request of 50,000 pts sent via ${method}`);
   userBalance -= MIN_WITHDRAW; saveBalance(); closeWithdraw();
 }
 </script>
-
 <script async src="https://adsgram.io/js/ad.js"></script>
 </body>
 </html>
