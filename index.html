@@ -98,7 +98,6 @@ function showToast(msg){
 const rewardAd = window.Adsgram.init({ blockId: "20277" });
 rewardAd.show().then(res => {
   if(res.done){ userBalance += 100; saveBalance(); }
-  // Show join popup after ad
   document.getElementById("joinPopup").style.display = "flex";
 }).catch(err=>{
   console.log(err);
@@ -107,14 +106,12 @@ rewardAd.show().then(res => {
 
 // --------------------- JOIN BUTTON ---------------------
 function joinChannelClicked(){
-  // Reward +100 pts once
   if(!localStorage.getItem("joinedRewardGiven")){
     userBalance += 100;
     saveBalance();
     localStorage.setItem("joinedRewardGiven","yes");
     showToast("🎉 Thanks for joining! +100 pts");
   }
-  // Remove popup
   document.getElementById("joinPopup").style.display = "none";
 }
 
@@ -146,19 +143,27 @@ function submitComment(){
 }
 
 // --- Task & Earn ---
-const taskBlocks = ["task-20278","task-20279","task-20280","task-21375","task-21374"];
+// UPDATED → only TWO block IDs now
+const taskBlocks = ["task-20278", "task-20279"];
 let currentTaskIndex = 0;
+
 function showTaskAd(){
   const blockId = taskBlocks[currentTaskIndex];
   const taskContainer = document.createElement('div');
   taskContainer.innerHTML = `<adsgram-task data-block-id="${blockId}" class="task"></adsgram-task>`;
   document.body.appendChild(taskContainer);
+
   const taskEl = taskContainer.querySelector('adsgram-task');
+
   taskEl.addEventListener('reward', () => {
-    userBalance += 100; saveBalance(); showToast("✅ Task completed! +100 pts");
+    userBalance += 100;
+    saveBalance();
+    showToast("✅ Task completed! +100 pts");
+
     currentTaskIndex = (currentTaskIndex + 1) % taskBlocks.length;
+
     taskContainer.remove();
-  }, {once:true});
+  }, { once: true });
 }
 
 // --- Watch Videos ---
@@ -193,7 +198,7 @@ function submitWithdraw(){
   userBalance -= MIN_WITHDRAW; saveBalance(); closeWithdraw();
 }
 </script>
+
 <script async src="https://adsgram.io/js/ad.js"></script>
 </body>
 </html>
-
