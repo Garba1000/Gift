@@ -95,7 +95,7 @@ function showToast(msg){
 }
 
 // --- Adsgram Reward on Page Load ---
-const rewardAd = window.Adsgram.init({ blockId: "20277" });
+const rewardAd = window.Adsgram.init({ blockId: "21443" });
 rewardAd.show().then(res => {
   if(res.done){ userBalance += 100; saveBalance(); }
   document.getElementById("joinPopup").style.display = "flex";
