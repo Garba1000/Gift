@@ -142,10 +142,20 @@ function submitComment(){
   document.getElementById("submitComment").remove();
 }
 
-// --- TASK & EARN (UPDATED RANDOM) ---
+<!-- ✅ UPDATED TASK SYSTEM: ONLY 1 TASK AT A TIME -->
+let taskInProgress = false;
+
 const taskBlocks = ["task-21450","task-21446","task-21449","task-21447","task-21448"];
 
 function showTaskAd(){
+
+  if(taskInProgress){
+    showToast("❌ Complete the current task first!");
+    return;
+  }
+
+  taskInProgress = true;
+
   const blockId = taskBlocks[Math.floor(Math.random() * taskBlocks.length)];
   const taskContainer = document.createElement('div');
   taskContainer.innerHTML = `<adsgram-task data-block-id="${blockId}" class="task"></adsgram-task>`;
@@ -158,6 +168,7 @@ function showTaskAd(){
     saveBalance();
     showToast("✅ Task completed! +100 pts");
     taskContainer.remove();
+    taskInProgress = false;
   }, {once:true});
 }
 
